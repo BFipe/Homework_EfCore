@@ -14,8 +14,8 @@ namespace Homework_EfCore.Models
 
         public int Year { get; set; }
 
-        public ICollection<User> Users { get; set; }
-        public ICollection<UserBooks> UserBooks { get; set; }
+        public List<User> Users { get; set; } = new List<User>();
+        public List<UserBooks> UserBooks { get; set; } = new List<UserBooks>();
 
     }
 

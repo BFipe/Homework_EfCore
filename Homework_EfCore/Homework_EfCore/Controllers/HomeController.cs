@@ -1,42 +1,90 @@
 ﻿using Homework_EfCore.Database;
+using Homework_EfCore.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Homework_EfCore.Controllers;
 
-public class HomeController : Controller
+
+[ApiController]
+[Route("[controller]")]
+public class HomeController : ControllerBase
 {
-    private DBService dbservice = new DBService();
-    public IActionResult Index()
-    {
-        dbservice.info = message => ViewData["Info"] += message + "\r\n";
-        return View();
-    }
+    private readonly IDBService _dbservice;
 
-    public async Task<IActionResult> BorrowedBooks()
+    public HomeController(IDBService dBService)
     {
-        dbservice.info = message => ViewData["Info"] += message + "\r\n";
-        return View(await dbservice.ReturnBorrowedBooksData());
-    }
-
-    public async Task<IActionResult> RemoveUselessUsers()
-    {
-        dbservice.info = message => ViewData["Info"] += message + "\r\n";
-        await dbservice.RemoveUselessUsers();
-        return View();
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> ReturnBook()
-    {
-        dbservice.info = message => ViewData["Info"] += message + "\r\n";
-        return View();
+        _dbservice = dBService;
     }
 
     [HttpPost]
-    public async Task<IActionResult> ReturnBook(string userEmail, string bookName)
+    [Route("/AddUser")]
+    public async Task<User> AddUser([FromForm] UserForm userForm)
     {
-        dbservice.info = message => ViewData["Info"] += message + "\r\n";
-        await dbservice.ReturnBookFromUser(userEmail, bookName);
-        return View();
+        return await _dbservice.AddUser(userForm);
     }
+
+    [HttpPost]
+    [Route("/AddAuthor")]
+    public async Task<Author> AddAuthor([FromForm] AuthorForm authorForm)
+    {
+        return await _dbservice.AddAuthor(authorForm);
+    }
+
+    [HttpPost]
+    [Route("/AddBook")]
+    public async Task<Book> AddBook([FromForm] BookForm bookForm)
+    {
+        return await _dbservice.AddBook(bookForm);
+    }
+
+    [HttpGet]
+    [Route("/AllUsers")]
+    public async Task<List<User>> AllUsers()
+    {
+        return await _dbservice.AllUsers();
+    }
+
+    [HttpGet]
+    [Route("/AllAuthors")]
+    public async Task<List<Author>> AllAuthors()
+    {
+        return await _dbservice.AllAuthors();
+    }
+
+    [HttpGet]
+    [Route("/AllBooks")]
+    public async Task<List<Book>> AllBooks()
+    {
+        return await _dbservice.AllBooks();
+    }
+
+    [HttpGet]
+    [Route("/AllBorrowedBooks")]
+    public async Task<List<BorrowedBooksViewModel>> BorrowedBooks()
+    {
+        return await _dbservice.ReturnBorrowedBooksData();
+    }
+
+    [HttpPost]
+    [Route("/GiveBook")]
+    public async Task<UserBookInfo> GiveBook([FromForm] UserBookInfo userBookInfo)
+    {
+        return await _dbservice.GiveBookToUser(userBookInfo);
+    }
+
+    [HttpDelete]
+    [Route("/ReturnBook")]
+    public async Task<UserBookInfo> ReturnBook([FromForm] UserBookInfo userBookInfo)
+    {
+        return await _dbservice.ReturnBookFromUser(userBookInfo);
+    }
+
+    [HttpDelete]
+    [Route("/RemoveUsersWithoutBooks")]
+    public async Task<string> RemoveUselessUsers()
+    {
+        return await _dbservice.RemoveUselessUsers();
+    }
+
+
 }

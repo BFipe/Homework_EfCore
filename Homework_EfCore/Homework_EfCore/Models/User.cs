@@ -12,8 +12,8 @@ namespace Homework_EfCore.Models
         public string Email { get; set; }
         public DateTime BirthDate { get; set; }
 
-        public ICollection<Book> Books { get; set; }
-        public ICollection<UserBooks> UserBooks { get; set; }
+        public List<Book> Books { get; set; } = new List<Book>();
+        public List<UserBooks> UserBooks { get; set; } = new List<UserBooks>();
 
     }
 }

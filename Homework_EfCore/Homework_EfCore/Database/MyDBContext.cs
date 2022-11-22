@@ -10,6 +10,11 @@ namespace Homework_EfCore.Database
 
         }
 
+        public MyDBContext(DbContextOptions options) : base(options)
+        {
+
+        }
+
         public DbSet<Book> Books { get; set; }
         public DbSet<Author> Authors { get; set; }
         public DbSet<User> Users { get; set; }

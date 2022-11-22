@@ -1,98 +1,111 @@
-﻿using Homework_EfCore.Models;
+﻿using Homework_EfCore.Exceptions;
+using Homework_EfCore.Models;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 
 namespace Homework_EfCore.Database
 {
-    public class DBService
+    public class DBService : IDBService
     {
-        public Action<string> info;
-
-        public async Task AddUser(string firstName, string lastName, string email, DateTime birthDate)
+        public async Task<User> AddUser(UserForm userForm)
         {
             using (MyDBContext db = new MyDBContext())
             {
-
-                await db.Users.AddAsync(new User()
+                if (db.Users.Any(q => q.Email == userForm.Email))
                 {
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Email = email,
-                    BirthDate = birthDate
-                });
-                await db.SaveChangesAsync();
-                info?.Invoke($"Added new user {email} into table Users");
-            }
-        }
-
-        public async Task AddAuthor(string firstName, string lastName, string country, DateTime birthDate)
-        {
-            using (MyDBContext db = new MyDBContext())
-            {
-                await db.Authors.AddAsync(new Author()
-                {
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Country = country,
-                    BirthDate = birthDate
-                });
-                await db.SaveChangesAsync();
-                info?.Invoke($"Added new author {firstName} {lastName} into table Authors");
-            }
-        }
-
-        public async Task AddBook(string name, int year, string authorLastName)
-        {
-            using (MyDBContext db = new MyDBContext())
-            {
-                var author = await _ReturnAuthorByName(authorLastName);
-                if (author != null)
-                {
-
-                    await db.Books.AddAsync(new Book()
-                    {
-                        Author = author,
-                        Name = name,
-                        Year = year
-                    });
-                    info?.Invoke($"Added new book {name} into table Books");
+                    throw new ObjectAlreadyExists(userForm.Email);
                 }
+                User user = new User()
+                {
+                    Email = userForm.Email,
+                    BirthDate = userForm.BirthDate,
+                    FirstName = userForm.FirstName,
+                    LastName = userForm.LastName
+                };
+                await db.Users.AddAsync(user);
                 await db.SaveChangesAsync();
+                return user;
             }
         }
 
-        private async Task<Author> _ReturnAuthorByName(string lastName)
+        public async Task<Author> AddAuthor(AuthorForm authorForm)
         {
             using (MyDBContext db = new MyDBContext())
             {
-                return await db.Authors.AsNoTracking().SingleOrDefaultAsync(q => q.LastName == lastName);
+                if (db.Authors.Any(q => q.FirstName +" "+ q.LastName == authorForm.FirstName +" "+ authorForm.LastName))
+                {
+                    throw new ObjectAlreadyExists(authorForm.FirstName + " " + authorForm.LastName);
+                }
+                Author author = new Author()
+                {
+                    BirthDate = authorForm.BirthDate,
+                    FirstName = authorForm.FirstName,
+                    LastName = authorForm.LastName,
+                    Country = authorForm.Country
+                };
+                await db.Authors.AddAsync(author);
+                await db.SaveChangesAsync();
+                return author;
             }
         }
 
-        public async Task AddData()
-        {
-            await AddUser("Ilya", "Maximov", "IlyaMaximov@Email.com", new DateTime(2002, 11, 21));
-            await AddUser("Andrei", "Polevoi", "ANDRUHA@Email.com", new DateTime(2004, 05, 05));
-            await AddUser("Vlad", "Pulyak", "VladPulyak@Email.com", new DateTime(2003, 01, 25));
-            await AddAuthor("Alexander", "Pushkin", "Russia", new DateTime(1799, 05, 26));
-            await AddAuthor("Nikolaj", "Gogol", "Ukraine", new DateTime(1809, 03, 25));
-            await AddAuthor("Lev", "Tolstoi", "Russia", new DateTime(1828, 09, 09));
-            await AddBook("Kapitanskaya dochka", 1836, "Pushkin");
-            await AddBook("Skazka o tsare Saltane", 1831, "Pushkin");
-            await AddBook("Vij", 1833, "Gogol");
-            await AddBook("Mertvie dushi", 1842, "Gogol");
-            await AddBook("Mumu", 1854, "Tolstoi");
-            await GiveBookToUser("IlyaMaximov@Email.com", "Kapitanskaya dochka");
-
-        }
-
-        public async Task GiveBookToUser(string userEmail, string bookName)
+        public async Task<Book> AddBook(BookForm bookForm)
         {
             using (MyDBContext db = new MyDBContext())
             {
-                var user = await db.Users.SingleOrDefaultAsync(q => q.Email == userEmail);
-                var book = await db.Books.SingleOrDefaultAsync(q => q.Name == bookName);
+                if (await db.Books.AnyAsync(q => q.Name == bookForm.BookName && q.Author.FirstName +" "+ q.Author.LastName == bookForm.AuthorFirstName+" "+bookForm.AuthorLastName))
+                {
+                    throw new ObjectAlreadyExists(bookForm.BookName);
+                }
+
+                if (bookForm.BookYear < 0 || bookForm.BookYear > DateTime.Now.Year)
+                {
+                    throw new IncorrectValue(bookForm.BookYear.ToString());
+                }
+                Author author = await _ReturnAuthorByName(bookForm.AuthorFirstName, bookForm.AuthorLastName);
+                Book book = new Book()
+                {
+                    Name = bookForm.BookName,
+                    Year = bookForm.BookYear,
+                    AuthorId = author.AuthorId 
+                }; 
+                await db.Books.AddAsync(book);
+                await db.SaveChangesAsync();
+                return book;
+            }
+        }
+
+        public async Task<List<User>> AllUsers()
+        {
+            using (MyDBContext db = new MyDBContext()) return await db.Users.ToListAsync();
+        }
+
+        public async Task<List<Author>> AllAuthors()
+        {
+            using (MyDBContext db = new MyDBContext()) return await db.Authors.ToListAsync();
+        }
+
+        public async Task<List<Book>> AllBooks()
+        {
+            using (MyDBContext db = new MyDBContext()) return await db.Books.ToListAsync();
+        }
+
+        public async Task<UserBookInfo> GiveBookToUser(UserBookInfo userBookInfo)
+        {
+            using (MyDBContext db = new MyDBContext())
+            {
+                var user = await db.Users.SingleOrDefaultAsync(q => q.Email == userBookInfo.UserEmail);
+                var book = await db.Books.SingleOrDefaultAsync(q => q.Name == userBookInfo.BookName && q.Author.FirstName == userBookInfo.AuthorFirstName && q.Author.LastName == userBookInfo.AuthorLastName);
+
+                if (user == null)
+                {
+                    throw new ObjectNotFound(userBookInfo.UserEmail);
+                }
+                if (book == null)
+                {
+                    throw new ObjectNotFound(userBookInfo.BookName);
+                }
 
                 if (!await db.UserBooks.AnyAsync(q => q.UserId == user.UserId && q.BookId == book.BookId))
                 {
@@ -102,48 +115,45 @@ namespace Homework_EfCore.Database
                         BookId = book.BookId,
                     });
                     await db.SaveChangesAsync();
-                    info?.Invoke($"User {user.Email} took the book {book.Name}");
+                    return new UserBookInfo() { BookName = book.Name, UserEmail = user.Email , AuthorFirstName = userBookInfo.AuthorFirstName, AuthorLastName = userBookInfo.AuthorLastName };
                 }
                 else
                 {
-                    info?.Invoke($"User {user.Email} already take this book {book.Name}");
+                    throw new Exception($"User {user.Email} already took this book {book.Name}");
                 }
             }
         }
 
-        public async Task ReturnBookFromUser(string userEmail, string bookName)
+        public async Task<UserBookInfo> ReturnBookFromUser(UserBookInfo userBookInfo)
         {
             using (MyDBContext db = new MyDBContext())
             {
-                var user = await db.Users.SingleOrDefaultAsync(q => q.Email == userEmail);
-                var book = await db.Books.SingleOrDefaultAsync(q => q.Name == bookName);
+                var user = await db.Users.SingleOrDefaultAsync(q => q.Email == userBookInfo.UserEmail);
+                var book = await db.Books.SingleOrDefaultAsync(q => q.Name == userBookInfo.BookName);
 
                 if (user == null)
                 {
-                    info?.Invoke($"User with email <{userEmail}> is not exist");
-                    return;
+                    throw new ObjectNotFound(userBookInfo.UserEmail);
                 }
                 if (book == null)
                 {
-                    info?.Invoke($"Book with name <{bookName}> is not exist");
-                    return;
+                    throw new ObjectNotFound(userBookInfo.BookName);
                 }
 
                 var data = await db.UserBooks.SingleOrDefaultAsync(q => q.UserId == user.UserId && q.BookId == book.BookId);
 
                 if (data == null)
                 {
-                    info?.Invoke($"User {user.Email} never took the book {book.Name}");
-                    return;
+                    throw new Exception($"User {user.Email} never take this book {book.Name}");
                 }
 
                 db.UserBooks.Remove(data);
                 await db.SaveChangesAsync();
-                info?.Invoke($"User {user.Email} returned the book {book.Name}");
+                return new UserBookInfo() { BookName = book.Name, UserEmail = user.Email };
             }
         }
 
-        public async Task RemoveUselessUsers()
+        public async Task<string> RemoveUselessUsers()
         {
             using (MyDBContext db = new MyDBContext())
             {
@@ -157,11 +167,11 @@ namespace Homework_EfCore.Database
                         message += $"\n{user.FirstName} {user.LastName}";
                     }
                     await db.SaveChangesAsync();
-                    info?.Invoke(message);
+                    return message;
                 }
                 else
                 {
-                    info?.Invoke("No users was removed");
+                    return "No users was removed";
                 }
             }
         }
@@ -178,6 +188,15 @@ namespace Homework_EfCore.Database
                     BookName = row.Book.Name,
                     BookYear = row.Book.Year
                 }).ToListAsync();
+            }
+        }
+
+
+        private async Task<Author> _ReturnAuthorByName(string authorFirstName, string authorLastName)
+        {
+            using (MyDBContext db = new MyDBContext())
+            {
+                return await db.Authors.AsNoTracking().SingleOrDefaultAsync(q => q.FirstName == authorFirstName && q.LastName == authorLastName);
             }
         }
     }
