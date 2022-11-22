@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HomeworkEfCore.Migrations
 {
     [DbContext(typeof(MyDBContext))]
-    [Migration("20221108081828_Init_UserBooks")]
-    partial class InitUserBooks
+    [Migration("20221122080608_Sluchyajno_Vsyo_Udalil")]
+    partial class SluchyajnoVsyoUdalil
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -78,6 +78,9 @@ namespace HomeworkEfCore.Migrations
                     b.HasKey("BookId");
 
                     b.HasIndex("AuthorId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Books");
                 });

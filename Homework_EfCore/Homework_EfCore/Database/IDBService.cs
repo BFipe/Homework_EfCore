@@ -21,7 +21,7 @@ namespace Homework_EfCore.Database
 
         public Task<string> RemoveUselessUsers();
 
-        public Task<List<BorrowedBooksViewModel>> ReturnBorrowedBooksData();      
+        public Task<List<BorrowedBooksDto>> ReturnBorrowedBooksData();      
     }
 }
 

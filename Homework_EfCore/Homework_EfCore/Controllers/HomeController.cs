@@ -18,21 +18,21 @@ public class HomeController : ControllerBase
 
     [HttpPost]
     [Route("/AddUser")]
-    public async Task<User> AddUser([FromForm] UserForm userForm)
+    public async Task<User> AddUser([FromBody] UserForm userForm)
     {
         return await _dbservice.AddUser(userForm);
     }
 
     [HttpPost]
     [Route("/AddAuthor")]
-    public async Task<Author> AddAuthor([FromForm] AuthorForm authorForm)
+    public async Task<Author> AddAuthor([FromBody] AuthorForm authorForm)
     {
         return await _dbservice.AddAuthor(authorForm);
     }
 
     [HttpPost]
     [Route("/AddBook")]
-    public async Task<Book> AddBook([FromForm] BookForm bookForm)
+    public async Task<Book> AddBook([FromBody] BookForm bookForm)
     {
         return await _dbservice.AddBook(bookForm);
     }
@@ -60,21 +60,21 @@ public class HomeController : ControllerBase
 
     [HttpGet]
     [Route("/AllBorrowedBooks")]
-    public async Task<List<BorrowedBooksViewModel>> BorrowedBooks()
+    public async Task<List<BorrowedBooksDto>> BorrowedBooks()
     {
         return await _dbservice.ReturnBorrowedBooksData();
     }
 
     [HttpPost]
     [Route("/GiveBook")]
-    public async Task<UserBookInfo> GiveBook([FromForm] UserBookInfo userBookInfo)
+    public async Task<UserBookInfo> GiveBook([FromBody] UserBookInfo userBookInfo)
     {
         return await _dbservice.GiveBookToUser(userBookInfo);
     }
 
     [HttpDelete]
     [Route("/ReturnBook")]
-    public async Task<UserBookInfo> ReturnBook([FromForm] UserBookInfo userBookInfo)
+    public async Task<UserBookInfo> ReturnBook([FromBody] UserBookInfo userBookInfo)
     {
         return await _dbservice.ReturnBookFromUser(userBookInfo);
     }

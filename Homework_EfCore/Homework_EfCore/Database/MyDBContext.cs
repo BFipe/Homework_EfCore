@@ -5,10 +5,6 @@ namespace Homework_EfCore.Database
 {
     public class MyDBContext : DbContext
     {
-        public MyDBContext()
-        {
-
-        }
 
         public MyDBContext(DbContextOptions options) : base(options)
         {
@@ -22,11 +18,6 @@ namespace Homework_EfCore.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                const string sqlAddress = "Server=localhost;Database=Homework_EfCore;Trusted_Connection=true;Encrypt=false";
-                optionsBuilder.UseSqlServer(sqlAddress);
-            }
             base.OnConfiguring(optionsBuilder);
         }
 
